@@ -1,0 +1,87 @@
+import alpaca_trade_api as tradeapi
+import os
+
+import pandas as pd
+import numpy as np
+import datetime
+from dateutil.relativedelta import relativedelta
+
+
+class Alpaca_Scraper:
+
+    def __init__(self):
+        self.api = tradeapi.REST()
+        self.storage_path = '../data_files/'
+    
+    '''
+    Return the data associated with a single ticker.
+    We're just gonna rock with Days for now
+    '''
+    def get_ticker_data(self, ticker, f_date, t_date):
+        barset = self.api.get_bars(ticker, f_date, t_date, adjustment='raw').df 
+        #barset = self.api.get_barset(ticker, freq, limit=limit)
+        #return barset[ticker].df.reset_index()
+        return barset.reset_index()
+
+
+    '''
+    Return a dictionary with tickers as keys and their 
+    historical barsets as values
+    '''
+    def get_tickers_data(self, tickers, freq='day', limit=100):
+        ret = {}
+        for i, ticker in enumerate(tickers):
+            print('Getting data for', i, ticker)
+            ret[ticker] = self.get_ticker_data(ticker, freq, limit)
+        return ret
+
+    '''
+    Updates the dictionary of company stock data to a local set of files for 
+    quick reading. Finds the last day the stock was updated if it exists, and updates
+    past that date.
+
+    Assumptions of this function: 
+        - granularity is day. 
+        - If a file exists for a certain stock, we only need to write data
+          since the last write for that stock. We assume that we have data from
+          limit until the last write. I don't want to deal with business days.
+        - If we want a fresh run, use the function "write_tickers_data"
+    '''
+    def update_tickers_data(self, tickers, limit=1000):
+        for ticker in tickers:
+            t_storage_name = self.storage_path + ticker + '.csv'
+            if os.path.exists(t_storage_name):
+                current_data = pd.read_csv(t_storage_name)
+                date_col = current_data['time']
+                max_date = date_col.max()
+                n_days = (datetime.datetime.now() - max_date).days
+                new_data = self.get_ticker_data(ticker, limit=n_days)
+                date_col_as_date = date_col.dt.date
+                is_after = new_tickers['time'].dt.date > date_col_as_date
+                write_df = pd.concat(current_data, new_data.loc[is_after])
+                write_df.to_csv(t_storage_name, index=False)
+
+            else:
+                new_data = self.get_ticker_data(ticker, limit)
+                new_data.to_csv(t_storage_name, index=False)
+
+
+
+    '''
+    Writes the dictionary of company stock data to a local set of files. If the 
+    file already exists, it is overwritten.
+
+    Because the funcitonality of this function is tied with the functionality of update,
+    it carries some of the same assumptions:
+        - Granularity must be day
+    '''
+    def write_tickers_data(self, tickers, limit=1000):
+        for ticker in tickers:
+            t_storage_name = self.storage_path + ticker + '.csv'
+            new_data = self.get_ticker_data(ticker, limit)
+            new_data.to_csv(t_storage_name, index=False)
+
+            
+
+
+

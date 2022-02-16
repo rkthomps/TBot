@@ -1,0 +1,20 @@
+
+def fill_col(self, col):
+    print('nas', len(col[pd.isna(col)]))
+    prev = -1
+    new_col = col.copy()
+
+    for i, item in col.iteritems():
+        if not pd.isna(item):
+            prev = item
+        else if prev >= 0:
+            new_col.loc[i] = prev
+
+    prev = -1
+    for i, item in col.iloc[::-1].iteritems():
+        if not pd.isna(item):
+            prev = item
+        else if prev >= 0:
+            new_col.loc[i] = prev
+    print('nas', len(col[pd.isna(col)]))
+
