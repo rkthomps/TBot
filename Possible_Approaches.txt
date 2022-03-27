@@ -1,6 +1,0 @@
-
-RNN
-Investigate Gradient Boosting
-Investigate Explainable Boosting
-Itemset mining and creation of association rules
-Sum-product networks
