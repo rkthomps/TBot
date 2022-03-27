@@ -13,19 +13,13 @@ class W_BackTester:
 
     Params:
         - preprocessor: Weekly_Preprocessor for almost every case
-        - strategy: strategy object to implement the trading for this backtester
-        - initial_value: initial value of the portfolio
-        - train_qs: number of weeks to train for 
-        - start_year: year to start trading: for pretrained model should be > 2011
-        - end_year: year to stop trading
+        - strategies: strategy object to implement the trading for this backtester
+        - model: model to use for stock prediction
     '''
     def __init__(self, preprocessor, strategies, model):
-        self.start_year = start_year
-        self.end_year = end_year
         self.model = model
         self.strategies = strategies
         self.preprocessor = preprocessor
-        self.train_weeks = train_weeks
 
         self.num_predictions = 0
         self.squared_error = 0

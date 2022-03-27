@@ -65,12 +65,15 @@ def test_weekly():
 def final_test_weekly():
     model = W_LSTM().load_model()
     out_dir = os.path.join('..', 'data_files', 'backtest_data', 'test_results')
+    wp = Weekly_Preprocessor(
+            n_weeks = 40,
+            start_year = 2010,
+            end_year = 2011)
+
     bt = W_BackTester(
-            preprocessor = Weekly_Preprocessor,
+            preprocessor = wp, 
             strategies = [Strategy(100000, 1.022, 0.956, 0.35, out_dir)],
             model=model,
-            start_year = 2010,
-            end_year = 2021
             )
     bt.backtest()
 

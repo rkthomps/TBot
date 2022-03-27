@@ -88,7 +88,7 @@ class Weekly_Preprocessor:
             sell_date = c_data.iloc[5 * (self.n_weeks + 1) - 1, date_loc]
         self.cur_week += 1
 
-        return np.array(xs), np.array(ys), np.array(prices), np.array(companies), buy_date, sell_date, self.cur_week - 1
+        return np.array(xs), np.array(ys), norm_cols + desired_cols, np.array(prices), np.array(companies), buy_date, sell_date, self.cur_week - 1
 
     '''
     Returns a 7-tuple with the following values
@@ -243,6 +243,7 @@ if __name__ == '__main__':
     wp = Weekly_Preprocessor(40, 2001, 2009)
     result = wp.get_next_week()
     cur_week = 0
+    print("I'm running for no reason")
     while result != None:
         print(cur_week)
         cur_week += 1
