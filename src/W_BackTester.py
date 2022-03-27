@@ -19,12 +19,12 @@ class W_BackTester:
         - start_year: year to start trading: for pretrained model should be > 2011
         - end_year: year to stop trading
     '''
-    def __init__(self, preprocessor, strategies, model, start_year, end_year, train_weeks=40):
+    def __init__(self, preprocessor, strategies, model):
         self.start_year = start_year
         self.end_year = end_year
         self.model = model
         self.strategies = strategies
-        self.preprocessor = preprocessor(train_weeks, start_year, end_year)
+        self.preprocessor = preprocessor
         self.train_weeks = train_weeks
 
         self.num_predictions = 0
@@ -58,8 +58,9 @@ class W_BackTester:
             result = self.preprocessor.get_next_week()
         for strat in self.strategies:
             strat.cleanup()
-        print('Total MSE', "%07.04f" % (self.squared_error / self.num_predictions))
-        print('Total_HL', "%07.04f" % (self.hl_acc / self.num_predictions))
-
-
+        total_mse = self.squared_error / self.num_predictions
+        total_hl = self.hl_acc / self.num_predictions
+        print('Total MSE', "%07.04f" % total_mse)
+        print('Total_HL', "%07.04f" % total_hl)
+        return total_mse
 

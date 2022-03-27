@@ -88,7 +88,7 @@ class Weekly_Preprocessor:
             sell_date = c_data.iloc[5 * (self.n_weeks + 1) - 1, date_loc]
         self.cur_week += 1
 
-        return np.array(xs), np.array(ys), [norm_cols + desired_cols], np.array(prices), np.array(companies), buy_date, sell_date, self.cur_week - 1
+        return np.array(xs), np.array(ys), np.array(prices), np.array(companies), buy_date, sell_date, self.cur_week - 1
 
     '''
     Returns a 7-tuple with the following values
