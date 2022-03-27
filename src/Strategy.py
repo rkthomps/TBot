@@ -5,20 +5,35 @@ import os
 
 # This class will allow for testing of many different allocation strategies
 class Strategy:
-    def __init__(self, initial_value, buy_cut, sell_cut, max_invest):
+    '''
+    initial_value: starting value of the portfolio
+    buy_cut: minimum prediction to buy a security
+    sell_cut: maximum prediction to short a securty
+    max_invest: maximum proportion of portfolio to invest in a single securty
+    out: directory to write results
+    '''
+    def __init__(self, initial_value, buy_cut, sell_cut, max_invest, out=None):
         self.initial_value = initial_value
         self.current_value = initial_value
         self.buy_cut = buy_cut
         self.sell_cut = sell_cut
         self.max_invest = max_invest
+
+        # Output directory is not specified
+        if out is None:
+            out = os.path.join('..', 'data_files', 'backtest_data', 'results')
+
+        # Make output directory
+        if not os.path.exists(out):
+            os.makedirs(out)
         
         this_id = ''
         this_id += "%05.03f" % buy_cut + '_'
         this_id += "%05.03f" % sell_cut + '_'
         this_id += "%05.03f" % max_invest 
 
-        self.trade_out = os.path.join('..', 'data_files', 'backtest_data', 'results', 'trade_'+ this_id + '.csv')
-        self.value_out = os.path.join('..', 'data_files', 'backtest_data', 'results', 'value_'+ this_id + '.csv')
+        self.trade_out = os.path.join(out, 'trade_'+ this_id + '.csv')
+        self.value_out = os.path.join(out, 'value_'+ this_id + '.csv')
 
         self.trade_history = [] 
         self.value_history = []
