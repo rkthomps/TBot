@@ -1,3 +1,9 @@
+# This module is apparently for evaluation although I forgot where
+# I even use this.
+
+# I don't believe is is currently important
+
+
 import numpy as np
 import pandas as pd
 

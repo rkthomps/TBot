@@ -2,6 +2,7 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
 from keras.layers import Dropout
+import tensorflow as tf
 
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import RandomizedSearchCV
@@ -139,7 +140,7 @@ class Q_RF_Operator:
     job lib but it honestly doesn't take that long to train
     '''
     def fit(self, model, train_x, train_y, retrain, segment):
-        out_file = os.join('..', 'data_files', 'backtest_data', 'q_models', 'seg' + str(segment)
+        out_file = os.join('..', 'data_files', 'backtest_data', 'q_models', 'seg' + str(segment))
         if retrain:
             model.fit(train_x, train_y)
             joblib.dump(model, out_file)
@@ -179,8 +180,31 @@ class Q_RF_Operator:
         return selected
 
 
+# This class is associated with loading in the pre-trained weekly model
+class W_LSTM:
+    '''
+    Loads the model that was trained on dev2
+    '''
+    def load_model(self):
+        with open(os.path.join('..', 'models', 'w_lstm', 'config.json')) as fin:
+            model = tf.keras.models.model_from_json(fin.read())
+        model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
+                loss=tf.keras.losses.MeanSquaredError())
+        cur_weights = 0
+        cur_path = os.path.join('..', 'models', 'w_lstm', 'weights_' + str(cur_weights) + '.txt')
+        weights = []
+        while os.path.exists(cur_path):
+            np_arr = np.loadtxt(cur_path, dtype='float32')
+            if cur_weights == 15:
+                np_arr = np_arr[:, None] # This is very jancky but I think there's a tensorflow version issue
+            if cur_weights == 16:
+                np_arr = np_arr[None]
+            weights.append(np_arr)
+            cur_weights += 1
+            cur_path = os.path.join('..', 'models', 'w_lstm', 'weights_' + str(cur_weights) + '.txt')
+        model.set_weights(weights)
+        return model
 
 
 
-
-
+        

@@ -18,6 +18,13 @@ class Scraper:
     def __init__(self):
         self.storage_path = '../data_files/stock_data/'
         self.quarter_path = '../data_files/quarterly_data/'
+        # Make technical and financial storage directories if they 
+        # don't exist
+        if not os.path.exists(self.storage_path):
+            os.makedirs(self.storage_path)
+        if not os.path.exists(self.quarter_path):
+            os.makedirs(self.quarter_path)
+
         self.sector_path = '../data_files/sectors.csv'
         self.q4_path = '../data_files/attr_dict.json'
         self.default_from = '1970-01-01'
