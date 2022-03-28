@@ -27,13 +27,13 @@ class Strategy:
         if not os.path.exists(out):
             os.makedirs(out)
         
-        this_id = ''
-        this_id += "%05.03f" % buy_cut + '_'
-        this_id += "%05.03f" % sell_cut + '_'
-        this_id += "%05.03f" % max_invest 
+        self.id = ''
+        self.id += "%05.03f" % buy_cut + '_'
+        self.id += "%05.03f" % sell_cut + '_'
+        self.id += "%05.03f" % max_invest 
 
-        self.trade_out = os.path.join(out, 'trade_'+ this_id + '.csv')
-        self.value_out = os.path.join(out, 'value_'+ this_id + '.csv')
+        self.trade_out = os.path.join(out, 'trade_'+ self.id + '.csv')
+        self.value_out = os.path.join(out, 'value_'+ self.id + '.csv')
 
         self.trade_history = [] 
         self.value_history = []
@@ -96,6 +96,18 @@ class Strategy:
         value_df = pd.DataFrame(self.value_history, columns=self.value_history_cols)
         trade_df.to_csv(self.trade_out, index=False)
         value_df.to_csv(self.value_out, index=False)
+
+    '''
+    Allows setting the out dir to a directory besides the original
+    '''
+    def set_out_dir(self, out_dir):
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+        self.trade_out = os.path.join(out_dir, 'trade_'+ self.id + '.csv')
+        self.value_out = os.path.join(out_dir, 'value_'+ self.id + '.csv')
+
+
+
 
 
 

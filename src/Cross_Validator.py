@@ -36,9 +36,9 @@ class Cross_Validator:
         self.acts = []
 
 
-        year_bounds = self.get_cval_list(start_year, end_year)
+        year_bounds = self.get_cval_list(start_year, end_year, test_size)
         self.wps = self.get_wps(year_bounds)
-        x, _, _, _, _, _, _, _, _ = self.wps[0].get_next_week()
+        x, _, _, _, _, _, _, _ = self.wps[0].get_next_week()
         self.wps[0].cur_week = 1
         self.model.build(x.shape)
         self.init_weights = model.get_weights()
@@ -50,7 +50,7 @@ class Cross_Validator:
     '''
     def get_cval_list(self, start_year, end_year, test_size):
         years_per_segment = np.floor((end_year - start_year) * test_size)
-        return np.arange(start_year, end_year, years_per_segment)
+        return np.arange(start_year, end_year + 1, years_per_segment)
 
 
     '''
@@ -109,7 +109,7 @@ class Cross_Validator:
             while n_examples < weeks_in_batch:
                 wp_index = int(np.random.random() * len(wps))
                 wps[wp_index].cur_week = rand_week(num_weeks(wps[wp_index]))
-                result = wps[which_wp(wp_counter)].get_next_week()
+                result = wps[wp_index].get_next_week()
                 if result is not None:
                     x, y, x_names, prices, companies, b_date, s_date, cur_week = result
                     xs.append(x)
@@ -121,8 +121,8 @@ class Cross_Validator:
     Trains the given model using training and testing WPs
     '''
     def train_model(self, train_wps, test_wp):
-        data_generator = self.create_gen(train_wps, self.train_batch_weeks)
-        val_generator = self.create_gen([test_wp], self.val_batch_weeks)
+        data_generator = self.stochastic_gen(train_wps, self.train_batch_weeks)
+        val_generator = self.stochastic_gen([test_wp], self.val_batch_weeks)
         cur_x, cur_y, x_names = data_generator.__next__()
         val_x, val_y, _ = val_generator.__next__()
 
@@ -166,8 +166,8 @@ class Cross_Validator:
     '''
     def run(self):
         for i, wp in enumerate(self.wps):
-            train_wps = wps[0:i] + wps[(i+1):]
-            test_wp = wps[i]
+            train_wps = self.wps[0:i] + self.wps[(i+1):]
+            test_wp = self.wps[i]
             self.model.set_weights(self.init_weights)
             self.train_model(train_wps, test_wp)
             test_wp.cur_week = 1
