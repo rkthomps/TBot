@@ -8,10 +8,11 @@ import datetime
 
 class Weekly_Preprocessor:
     # Scrape is either local or 'yf' implying the data is from the yf api
-    def __init__(self, n_weeks, start_year, end_year, scrape='local'):
+    def __init__(self, n_weeks, start_year, end_year, scrape='local', binary=False):
         self.start_year = start_year
         self.end_year = end_year
         self.n_weeks = n_weeks
+        self.binary=binary
         
         ## For streaming in data
         self.cur_week = 1
@@ -81,7 +82,11 @@ class Weekly_Preprocessor:
             dis.append(c_data.iloc[:(5 * self.n_weeks), di_loc].values)
             target_close = c_data.iloc[5 * (self.n_weeks + 1) - 1, close_loc]
             last_close = c_data.iloc[5 * self.n_weeks - 1, close_loc]
-            ys.append(target_close / last_close)
+            changes = target_close / last_close
+            if not self.binary:
+                ys.append(changes)
+            else:
+                ys.append((changes > 1).astype(float))
             prices.append(last_close)
             companies.append(candidate)
             buy_date = c_data.iloc[5 * self.n_weeks - 1, date_loc]

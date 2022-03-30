@@ -13,21 +13,27 @@ class Cross_Validator:
         test_size, 
         model, 
         strats,
-        train_batch_weeks=15,
+        binary=False,
+        train_batch_weeks=20,
         val_batch_weeks=4,
+        test_batch_weeks=20,
         batch_size=256,
         epochs=30,
         iters=50,
+        test_iters=4,
         out_dir=os.path.join('..', 'data_files', 'cv_results')
         ):
 
         self.model = model
         self.strats = strats
+        self.binary=binary
         self.train_batch_weeks = train_batch_weeks
         self.val_batch_weeks = val_batch_weeks
+        self.test_batch_weeks = test_batch_weeks
         self.batch_size = batch_size
         self.epochs = epochs
         self.iters = iters
+        self.test_iters = test_iters
         self.out_dir = out_dir
         if not os.path.exists(self.out_dir):
             os.makedirs(out_dir)
@@ -59,7 +65,7 @@ class Cross_Validator:
     def get_wps(self, year_bounds):
         WPs = []
         for i in range(len(year_bounds) - 1):
-            WPs.append(WP(40, year_bounds[i], year_bounds[i + 1] - 1))
+            WPs.append(WP(40, year_bounds[i], year_bounds[i + 1] - 1, binary=self.binary))
         return WPs
 
     '''
@@ -128,9 +134,7 @@ class Cross_Validator:
 
         for i in range(self.iters):
             self.model.fit(cur_x, cur_y, epochs=self.epochs, batch_size=self.batch_size, validation_data=(val_x, val_y))
-            pred = model.predict(val_x)
-            self.preds.append(pred)
-            self.acts.append(cur_y)
+            pred = self.model.predict(val_x)
             print(i, pred.std())
             del cur_x
             del cur_y
@@ -146,6 +150,18 @@ class Cross_Validator:
     results
     '''
     def get_results(self, test_wp):
+        # Test Model performance
+        test_generator = self.stochastic_gen([test_wp], self.test_batch_weeks)
+        test_x, test_y, _ = test_generator.__next__()
+        for i in range(self.test_iters):
+            pred = self.model.predict(test_x)[:, 0]
+            self.preds.append(pred)
+            self.acts.append(test_y)
+            del test_x
+            del test_y
+            test_x, test_y, _ = test_generator.__next__()
+
+        # Run Strategies
         res_dir = os.path.join(self.out_dir, 'results_', str(int(test_wp.start_year)))
         if self.strats is None or len(self.strats) < 1:
             return
@@ -177,8 +193,8 @@ class Cross_Validator:
         print('preds', preds.shape)
         acts = np.concatenate(self.acts)
         print('acts', acts.shape)
-        np.savetxt(os.path.join(self.out_dir, 'predicted'))
-        np.savetxt(os.path.join(self.out_dir, 'actual'))
+        np.savetxt(os.path.join(self.out_dir, 'predicted'), preds)
+        np.savetxt(os.path.join(self.out_dir, 'actual'), acts)
 
 
 if __name__ == '__main__':
