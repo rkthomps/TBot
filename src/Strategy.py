@@ -12,7 +12,7 @@ class Strategy:
     max_invest: maximum proportion of portfolio to invest in a single securty
     out: directory to write results
     '''
-    def __init__(self, initial_value, buy_cut, sell_cut, max_invest, out=None):
+    def __init__(self, initial_value, buy_cut, sell_cut, max_invest, bal_error=False, out=None):
         self.initial_value = initial_value
         self.current_value = initial_value
         self.buy_cut = buy_cut
@@ -26,6 +26,10 @@ class Strategy:
         # Make output directory
         if not os.path.exists(out):
             os.makedirs(out)
+
+        # For creating error interval 
+        self.bal_error = bal_error
+        self.comp_errs = pd.DataFrame({'SSE':[], 'Count':[]}, index=[])
         
         self.id = ''
         self.id += "%05.03f" % buy_cut + '_'
@@ -53,8 +57,16 @@ class Strategy:
             2. We don't have enough capital to purchase more stocks
     '''
     def apply_allocation_strat(self, prediction_df, buy_date, sell_date, week_num):
-        candidates = prediction_df.loc[(prediction_df['pred'] > self.buy_cut) | (prediction_df['pred'] < self.sell_cut)]
-        candidates = candidates.sort_values('pred', key=lambda x: -1 * abs(1 - x))
+        prediction_df['buy'] = prediction_df['pred'] > self.buy_cut
+        prediction_df['sell'] = prediction_df['pred'] < self.sell_cut
+        candidate_df = predicition_df.loc[prediction_df['buy'] | prediction_df['sell']]
+        candidate_df['desire'] = candidate_df.apply(lambda row: row['pred'] - 1 if row['buy'] else 1 - row['pred'])
+        # Normalize by company mse
+        if self.bal_error:
+            candidate_df = pd.merge(candidate_df, self.comp_errs, left_on='Company', right_index=True, how='inner')
+            candidate_df['desire'] = candidate_df['desire'] - (candidate_df['SSE'] / candidate_df['Count'] / 2)
+        candidate_df = candidate_df.sort_values('desure', ascending=False)
+
         cur_ceiling = self.max_invest * self.current_value
         value_left = self.current_value
 
@@ -66,7 +78,7 @@ class Strategy:
             num_shares = act_ceiling // row['price']
             value_in = num_shares * row['price']
             position = ''
-            if row['pred'] > self.buy_cut:
+            if row['buy'] 
                 buys[row['Company']] = value_in
                 position = 'buy'
             else:
@@ -87,6 +99,8 @@ class Strategy:
 
         self.current_value = value_left
         self.value_history.append((sell_date, self.current_value))
+        if self.bal_error:
+            self.update_err(prediction_df)
 
     '''
     Create dataframes for trade and value history and write them away
@@ -96,6 +110,19 @@ class Strategy:
         value_df = pd.DataFrame(self.value_history, columns=self.value_history_cols)
         trade_df.to_csv(self.trade_out, index=False)
         value_df.to_csv(self.value_out, index=False)
+
+    '''
+    Given the prediction df, updates the average error calculation for
+    each company
+    '''
+    def update_err(self, pred_df):
+        pred_df['SSE'] = (pred_df['pred'] - pred_df['act']) ** 2
+        for i, row in pred_df:
+            if not row['Comany'] in self.comp_errs.index:
+                self.comp_errs.loc[row['Company']] = [0.0, 0.0]
+            self.comp_errs.loc['Company'] = self.comp_errs.loc['Company'] + np.array(row['SSE'], 1)
+
+        
 
     '''
     Allows setting the out dir to a directory besides the original
