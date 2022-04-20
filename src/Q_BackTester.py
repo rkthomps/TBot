@@ -45,11 +45,7 @@ class Q_BackTester:
         self.snp_data['Date'] = pd.to_datetime(self.snp_data['Date']).dt.date
         self.train_every = train_every
 
-        if retrain:
-            self.formatted = self.preprocessor.produce_ind_and_response(self.train_qs, end_year=self.end_year)
-            self.save_formatted()
-        else:
-            self.formatted = self.get_formatted()
+        self.formatted = self.preprocessor.produce_ind_and_response(self.train_qs, end_year=self.end_year)
 
     '''
     Actually runs the backtesting for all the given parameters for the class initiation
@@ -90,6 +86,9 @@ class Q_BackTester:
             ## This is for classification: Assuming highest class is the best
             if len(pred.shape) == 2:
                 pred = pred[:, -1]
+            print('\tItems in segment:', len(pred))
+            print('\tSegment MSE:', ((pred - y_test) ** 2).mean())
+            print('\tSegment HL:', (((pred > 1) & (y_test > 1)) | ((pred < 1) & (y_test < 1))).mean())
 
             basic_dex = np.arange(len(pred))
             buy_test = segments[i]['buy']
@@ -145,7 +144,6 @@ class Q_BackTester:
         trade_history_cols = ['ticker', 'buy_date', 'sell_date', 'num_shares', 'buy_price', 'sell_price', 
                 'week_rank', 'position', 'predicted_change', 'actual_change']
         value_history = []
-        value_history.append((prediction_df['buy_date'].min(), self.current_value))
         value_history_cols = ['date', 'value']
 
         unique_starts = sorted(list(prediction_df['start_q'].unique()))
@@ -236,54 +234,3 @@ class Q_BackTester:
             elif prev >= 0:
                 new_col.loc[i] = prev
         return new_col
-
-    '''
-    Returns cached formatted input data
-    '''
-    def get_formatted(self):
-        self.x_loc = 0
-        self.y_loc = 1
-        self.x_names_loc = 2
-        self.price_loc = 3
-        self.buy_date_loc = 4
-        self.sell_date_loc = 5
-        self.comp_loc = 6
-        self.q_loc = 7
-        
-        save_loc = os.join('..', 'data_files', 'backtest_data')
-        with open(os.join(save_loc, 'x_names'), 'r') as fin:
-            x_names = json.load(fin)
-
-        try:
-            x = np.loadtxt(os.join(save_loc, 'x'))
-            y = np.loadtxt(os.join(save_loc, 'y'))
-            price = np.loadtxt(os.join(save_loc, 'price'))
-            buy_d = np.loadtxt(os.join(save_loc, 'buy_d'))
-            sell_d = np.loadtxt(os.join(save_loc, 'sell_d'))
-            comp = np.loadtxt(os.join(save_loc, 'comp'))
-            q = np.loadtxt(os.join(save_loc, 'quarter'))
-        except IOError as e:
-            print('Retrain files do not exist')
-            exit()
-
-        return x, y, x_names, price, buy_d, sell_d, comp, q
-
-    '''
-    Saves formatted input data
-    '''
-    def save_formatted(self):
-        save_loc = os.join('..', 'data_files', 'backtest_data')
-        with open(os.join(save_loc, 'x_names'), 'w') as fout:
-            fout.write(json.dumps(self.formatted[self.x_names_loc]))
-
-        np.savetxt(os.join(save_loc, 'x'), self.formatted[self.x_loc])
-        np.savetxt(os.join(save_loc, 'y'), self.formatted[self.y_loc])
-        np.savetxt(os.join(save_loc, 'price'), self.formatted[self.price_loc])
-        np.savetxt(os.join(save_loc, 'buy_d'), self.formatted[self.buy_date_loc])
-        np.savetxt(os.join(save_loc, 'sell_d'), self.formatted[self.sell_date_loc])
-        np.savetxt(os.join(save_loc, 'comp'), self.formatted[self.comp_loc])
-        np.savetxt(os.join(save_loc, 'quarter'), self.formatted[self.q_loc])
-
-
-
-

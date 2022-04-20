@@ -1,4 +1,3 @@
-
 from Q_BackTester import Q_BackTester
 from BackTester import BackTester
 from W_BackTester import W_BackTester
@@ -38,28 +37,30 @@ def test_quarterly():
             mod_op=modeler, 
             train_qs=4, 
             end_year=2020, 
-            train_every=4)
+            train_every=4,
+            retrain=True)
     bt.backtest()
 
 
 def test_weekly():
     model = W_LSTM().load_model()
-    buy_cuts = np.linspace(1, 1.1, 10)
-    sell_cuts = np.linspace(0.9, 1, 10)
-    max_alloc = np.linspace(0.05, 0.5, 10)
+    buy_cuts = np.linspace(1, 1.05, 5)
+    sell_cuts = np.linspace(0.9, 1, 5)
+    max_alloc = np.linspace(0.05, 0.5, 5)
+    bal_error = [True, False]
+    
 
     strats = []
     for b in buy_cuts:
         for s in sell_cuts:
             for m in max_alloc:
-                strats.append(Strategy(100000, b, s, m))
+                for e in bal_error:
+                    strats.append(Strategy(100000, b, s, m, bal_error=e))
                 
     bt = W_BackTester(
-            preprocessor = Weekly_Preprocessor,
+            preprocessor = Weekly_Preprocessor(40, start_year=2000, end_year=2005),
             strategies = strats,
-            model=model,
-            start_year = 2001,
-            end_year = 2009)
+            model=model)
     bt.backtest()
 
 def final_test_weekly():
@@ -90,4 +91,4 @@ def test():
 
 
 if __name__ == '__main__':
-    final_test_weekly()
+    test_weekly()
