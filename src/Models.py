@@ -140,7 +140,7 @@ class Q_RF_Operator:
     job lib but it honestly doesn't take that long to train
     '''
     def fit(self, model, train_x, train_y, retrain, segment):
-        out_file = os.join('..', 'data_files', 'backtest_data', 'q_models', 'seg' + str(segment))
+        out_file = os.path.join('..', 'data_files', 'backtest_data', 'q_models', 'seg' + str(segment))
         if retrain:
             model.fit(train_x, train_y)
             joblib.dump(model, out_file)

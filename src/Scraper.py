@@ -11,6 +11,10 @@ import pandas as pd
 import numpy as np
 import datetime
 from dateutil.relativedelta import relativedelta
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+from pandas.io.json import json_normalize
+
 from Company_Lister import Company_Lister
 
 
@@ -216,6 +220,38 @@ class Scraper:
         return final_df
 
     '''
+    Gets the quarterly data from factset
+    '''
+    def get_factset_quarterly(self, tickers):
+        authorization = (os.getenv('FACT_USER'), os.getenv('FACT_KEY'))
+        print(authorization)
+        fundamentals_endpoint = 'https://api.factset.com/content/factset-fundamentals/v1/fundamentals'
+        request = {
+            'ids': tickers[:3],
+            'periodicity': 'QTR',
+            'fiscalPeriodStart': '2018-01-01',
+            'fiscalPeriodEnd': '2018-03-01',
+            'metrics': '\metrics',
+            'currency': 'USD',
+            'restated': 'RF'
+            }
+        headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+        post = json.dumps(request)
+        response = requests.post(
+                url=fundamentals_endpoint, 
+                data=post, 
+                auth=authorization, 
+                headers=headers, 
+                verify=False)
+        print(response)
+        print(response.text)
+        data = json.loads(response.text)
+        print(data)
+
+            
+
+
+    '''
     Gets the sector of each company in the input list.
     '''
     def get_sector(self, tickers, overwrite=False):
@@ -257,12 +293,20 @@ def main():
             scrape.get_all_quarterly(snp, overwrite=True)
             scrape.get_sector(snp, overwrite=True)
         else:
-            scrape.get_all_quarterly(snp)
+            scrape.get_quarterly(snp)
             scrape.get_sector(snp)
+    if '-qf' in sys.argv:
+        scrape.get_factset_quarterly(snp)
     else:
         scrape.update_tickers_data(snp, '1970-01-01', str(now.date()))
 
+def temp_main():
+    snp = sorted(Company_Lister().get_snp())
+    scrape = Scraper()
+    scrape.get_factset_quarterly(snp)
+    
+
 if __name__ == '__main__':
-    main()
+    temp_main()
 
 

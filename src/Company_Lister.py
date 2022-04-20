@@ -30,6 +30,9 @@ class Company_Lister:
         snp_df[date_name] = pd.to_datetime(snp_df[date_name])
         return list(snp_df.loc[snp_df[date_name] < date, 'Symbol'])
 
+if __name__=='__main__':
+    print(' '.join(Company_Lister().get_snp()))
+
 
 
 
