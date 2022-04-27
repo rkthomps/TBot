@@ -2,7 +2,6 @@ import tensorflow as tf
 import numpy as np
 
 MAX_TOKENS = 400
-MAX_DIM = 500
 
 
 def point_wise_feed_forward_network(d_model, dff):
@@ -132,8 +131,8 @@ class Encoder(tf.keras.layers.Layer):
         self.d_model = d_model
         self.num_layers = num_layers
 
-        #self.pos_encoding = positional_encoding(MAX_TOKENS, MAX_DIM)
-        self.pos_encoding = point_wise_feed_forward_network(d_model, dff)
+        self.pos_encoding = positional_encoding(MAX_TOKENS, d_model)
+        self.input_transform = point_wise_feed_forward_network(d_model, dff)
 
         self.enc_layers = [
                 EncoderLayer(d_model=d_model, num_heads=num_heads, dff=dff, rate=rate)
@@ -142,11 +141,11 @@ class Encoder(tf.keras.layers.Layer):
 
     def call(self, x, training):
         seq_len = tf.shape(x)[1]
-        dim_len = tf.shape(x)[2]
         attn_weights = {}
 
         x *= tf.math.sqrt(tf.cast(self.d_model, tf.float32)) # Don't see why necessary
-        x_pos = self.pos_encoding(x)
+        x_pos = self.input_transform(x)
+        x_pos += self.pos_encoding[:, :seq_len, :] 
 
         x_pos = self.dropout(x_pos, training=training) # Dropout after positional encoding
 
@@ -159,15 +158,18 @@ class Encoder(tf.keras.layers.Layer):
 
 class Transformer(tf.keras.Model):
     def __init__(self, num_layers, d_model, num_heads, dff, rate=0.1):
-        super().__init__() # Don't need to specify transformer here
+        super(Transformer, self).__init__() 
         self.encoder = Encoder(num_layers=num_layers, d_model=d_model, 
                                 num_heads=num_heads, dff=dff, rate=rate)
 
+        self.flat_layer = tf.keras.layers.Flatten()
         self.final_layer = tf.keras.layers.Dense(1)
+
 
     def call(self, inp, training):
         enc_output, attention_weights = self.encoder(inp, training)
-        final_output = self.final_layer(enc_output)
-        return final_output, attention_weights
+        flat_out = self.flat_layer(enc_output)
+        final_output = self.final_layer(flat_out)
+        return final_output 
 
 

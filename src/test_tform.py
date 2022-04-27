@@ -36,11 +36,9 @@ if ckpt_manager.latest_checkpoint:
 
 EPOCHS = 20
 
-## Defines a distributed strategy for training
-strategy = tf.distribute.MirroredStrategy()
 
-
-loss_function = tf.keras.losses.MeanSquaredError()
+loss_function = tf.keras.losses.MeanSquaredError(reduction='none')
+train_loss = tf.keras.metrics.Mean(name='train_loss')
 
 # This is probably not my signature, I will be using 
 # floats that are already composed into batches
@@ -52,8 +50,18 @@ train_step_signature = [
 @tf.function(input_signature=train_step_signature)
 def train_step(inp, tar):
     with tf.GradientTape() as tape:
-        predictions, _ = trainsformer(inp, training=True)
-        loss = 
+        predictions, _ = tform(inp, training=True)
+        loss = loss_funtion(tar, predictions)
+    gradients = tape.gradient(loss, tform.trainable_variables)
+    optimizer.apply_gradients(zip(gradients, tform.trainable_variables))
+
+    train_loss.update_state(loss)
+
+
+for epoch in range(EPOCHS):
+    pass
+
+    
 
 
 

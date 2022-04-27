@@ -32,10 +32,16 @@ tform = Transformer(
             dff = dff)
 
 
-inp = tf.constant(np.arange(81).reshape(9, 3, 3), dtype=tf.float32)
-out = tf.constant(np.arange(9), dtype=tf.float32) 
+examples = 10
+seq_len = 4 
+d_model_prev= 4
+in_size = examples * seq_len * d_model_prev
+inp = tf.constant(np.arange(in_size).reshape(examples, seq_len, d_model_prev), dtype=tf.float32)
+out = tf.constant(np.arange(examples)[:, None], dtype=tf.float32) 
 
 learning_rate = CustomSchedule(d_model)
+print(tform(inp))
+
 tform.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate, beta_1=0.9, 
                                             beta_2=0.98, epsilon=1e-9),
